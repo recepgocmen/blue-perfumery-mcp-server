@@ -5,6 +5,10 @@
 
 A Model Context Protocol (MCP) server that provides seamless access to the Blue Perfumery perfume collection data, enabling AI assistants to help users discover and purchase their perfect fragrance.
 
+<a href="https://glama.ai/mcp/servers/@recepgocmen/blue-perfumery-mcp-server">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@recepgocmen/blue-perfumery-mcp-server/badge" alt="Blue Perfumery Server MCP server" />
+</a>
+
 ## ✨ Overview
 
 This MCP server exposes comprehensive perfume data from the Blue Perfumery website, allowing Claude and other MCP-compatible AI assistants to:
