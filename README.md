@@ -1,11 +1,11 @@
-# 🌸 Blue Perfumery MCP Server
+# Blue Perfumery MCP Server
 
 [![npm version](https://badge.fury.io/js/%40blueperfumery%2Fmcp-server.svg)](https://www.npmjs.com/package/@blueperfumery/mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Model Context Protocol (MCP) server that provides seamless access to the Blue Perfumery perfume collection data, enabling AI assistants to help users discover and purchase their perfect fragrance.
 
-## ✨ Overview
+## Overview
 
 This MCP server exposes comprehensive perfume data from the Blue Perfumery website, allowing Claude and other MCP-compatible AI assistants to:
 
@@ -15,7 +15,7 @@ This MCP server exposes comprehensive perfume data from the Blue Perfumery websi
 - 📝 Access detailed fragrance notes and descriptions
 - 🛒 Direct integration with Shopier for purchases
 
-## 🛠️ Features
+## Features
 
 The server provides the following powerful tools:
 
@@ -145,7 +145,7 @@ The server is built with:
 - @modelcontextprotocol/sdk
 - Node.js
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Here's how you can help:
 
@@ -164,15 +164,15 @@ We welcome contributions! Here's how you can help:
 - 🎨 Enhance data structure with images
 - 🔗 Integrate with other e-commerce platforms
 
-## 🐛 Issues
+## Issues
 
 Found a bug or have a feature request? Please [open an issue](https://github.com/recepgocmen/blue-perfumery-mcp/issues).
 
-## 📜 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🏢 About Blue Perfumery
+## About Blue Perfumery
 
 Blue Perfumery is a premium fragrance retailer offering luxury and niche perfumes. Visit [Blue Perfumery](https://blueperfumery.com) to explore our full collection.
 
