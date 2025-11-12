@@ -7,13 +7,8 @@ import {
   ListToolsRequestSchema,
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
-import { 
-  perfumes, 
-  getPerfumesByGender, 
-  searchPerfumesByName, 
-  getPerfumeById,
-  type Perfume 
-} from "./data.js";
+import { connectDatabase } from "./config/database.js";
+import { Product, type Perfume } from "./models/Product.js";
 
 const server = new Server(
   {
@@ -108,6 +103,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     switch (name) {
       case "list_all_perfumes": {
+        const perfumes = await Product.find({ status: "active" }).lean();
         return {
           content: [
             {
@@ -132,7 +128,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           );
         }
 
-        const perfume = getPerfumeById(id);
+        const perfume = await Product.findOne({ id, status: "active" }).lean();
         
         if (!perfume) {
           return {
@@ -171,7 +167,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           );
         }
 
-        const results = searchPerfumesByName(query);
+        const results = await Product.find({
+          status: "active",
+          $or: [
+            { name: { $regex: query, $options: "i" } },
+            { brand: { $regex: query, $options: "i" } },
+            { description: { $regex: query, $options: "i" } },
+          ],
+        }).lean();
 
         return {
           content: [
@@ -205,7 +208,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           );
         }
 
-        const results = getPerfumesByGender(category);
+        let filter: any = { status: "active" };
+        
+        if (category === "niche" || category === "niches") {
+          // Niche perfumes - filter by category containing exclusive/artisanal/premium
+          filter.$or = [
+            { category: { $regex: "exclusive", $options: "i" } },
+            { category: { $regex: "artisanal", $options: "i" } },
+            { category: { $regex: "premium", $options: "i" } },
+            { category: "niches" },
+          ];
+        } else if (category === "men" || category === "male") {
+          // Men's perfumes - male or unisex
+          filter.$or = [
+            { gender: "male" },
+            { gender: "unisex" },
+          ];
+        } else if (category === "women" || category === "female") {
+          // Women's perfumes - female or unisex
+          filter.$or = [
+            { gender: "female" },
+            { gender: "unisex" },
+          ];
+        }
+
+        const results = await Product.find(filter).lean();
 
         return {
           content: [
@@ -232,7 +259,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           );
         }
 
-        const perfume = getPerfumeById(id);
+        const perfume = await Product.findOne({ id, status: "active" }).lean();
         
         if (!perfume) {
           return {
@@ -301,9 +328,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 // Start the server
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("Blue Perfumery MCP server running on stdio");
+  try {
+    // Connect to database first
+    await connectDatabase();
+    
+    // Then start the MCP server
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error("Blue Perfumery MCP server running on stdio");
+  } catch (error) {
+    console.error("Failed to start MCP server:", error);
+    process.exit(1);
+  }
 }
 
 main().catch((error) => {

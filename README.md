@@ -27,6 +27,12 @@ The server provides the following powerful tools:
 
 ## Installation
 
+### Prerequisites
+
+- Node.js (v18 or higher)
+- MongoDB (local or MongoDB Atlas)
+- Access to Blue Perfumery MongoDB database
+
 ### Option 1: NPM Package (Recommended)
 
 ```bash
@@ -42,6 +48,36 @@ npm install
 npm run build
 ```
 
+### Database Setup
+
+The MCP server requires a MongoDB connection to fetch real-time perfume data:
+
+1. **Create environment file**
+
+   Copy `env.example` to `.env`:
+   ```bash
+   cp env.example .env
+   ```
+
+2. **Configure MongoDB connection**
+
+   Edit `.env` file with your MongoDB URI:
+   ```bash
+   # For local MongoDB
+   MONGODB_URI=mongodb://localhost:27017/blueperfumery
+   
+   # For MongoDB Atlas (cloud)
+   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/blueperfumery
+   ```
+
+3. **Ensure database has data**
+
+   The MCP server connects to the same database as the Blue Perfumery backend. Make sure your backend is running and has data migrated:
+   ```bash
+   cd ../blueperfumery-backend
+   npm run migrate  # This will populate the database with perfume data
+   ```
+
 ## Usage
 
 ### Using with Claude Desktop
@@ -53,7 +89,10 @@ Add the following to your Claude Desktop configuration file:
 {
   "mcpServers": {
     "blue-perfumery": {
-      "command": "blue-perfumery-mcp"
+      "command": "blue-perfumery-mcp",
+      "env": {
+        "MONGODB_URI": "mongodb://localhost:27017/blueperfumery"
+      }
     }
   }
 }
@@ -66,11 +105,16 @@ Add the following to your Claude Desktop configuration file:
     "blue-perfumery": {
       "command": "node",
       "args": ["dist/index.js"],
-      "cwd": "/path/to/mcp-server"
+      "cwd": "/path/to/mcp-server",
+      "env": {
+        "MONGODB_URI": "mongodb://localhost:27017/blueperfumery"
+      }
     }
   }
 }
 ```
+
+> **Important**: Replace the `MONGODB_URI` value with your actual MongoDB connection string. For production, use MongoDB Atlas or your hosted database URL.
 
 ### Configuration File Location
 
@@ -89,13 +133,47 @@ Each perfume object contains:
 - `name`: Perfume name
 - `brand`: Brand name
 - `price`: Price in TL
-- `ml`: Volume in milliliters (optional)
+- `ml`: Volume in milliliters
 - `originalPrice`: Original price (optional)
 - `gender`: "male", "female", or "unisex"
+- `category`: Product category (luxury, premium, etc.)
+- `status`: Product status (active, inactive, discontinued)
+- `stock`: Available stock quantity
+- `sku`: Stock keeping unit
 - `notes`: Array of scent notes
 - `description`: Description text
 - `ageRange`: Recommended age range (min/max)
 - `characteristics`: Array of characteristic descriptors
+- `shopierLink`: Purchase link (optional)
+
+## Database Integration
+
+The MCP server now connects directly to the MongoDB database used by the Blue Perfumery backend. This means:
+
+- **Real-time data**: All perfume data is fetched from the live database
+- **No static data**: The server no longer uses hardcoded perfume lists
+- **Automatic updates**: Any changes to products in the backend are immediately reflected
+- **Shared database**: Both the backend API and MCP server use the same MongoDB instance
+
+### Architecture
+
+```
+┌─────────────────────┐
+│  Claude Desktop     │
+│  (MCP Client)       │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐       ┌─────────────────────┐
+│  MCP Server         │◄──────┤  MongoDB Database   │
+│  (This Package)     │       │  (blueperfumery)    │
+└─────────────────────┘       └──────────▲──────────┘
+                                         │
+                              ┌──────────┴──────────┐
+                              │  Backend API        │
+                              │  (Express + REST)   │
+                              └─────────────────────┘
+```
 
 ## Example Usage
 
@@ -144,6 +222,29 @@ The server is built with:
 - TypeScript
 - @modelcontextprotocol/sdk
 - Node.js
+- MongoDB & Mongoose
+- dotenv
+
+### Running in Development
+
+```bash
+# Install dependencies
+npm install
+
+# Create .env file with MongoDB URI
+cp env.example .env
+
+# Edit .env with your MongoDB connection string
+
+# Run in development mode
+npm run dev
+
+# Build for production
+npm run build
+
+# Run production build
+npm start
+```
 
 ## Contributing
 
@@ -157,12 +258,14 @@ We welcome contributions! Here's how you can help:
 
 ### Ideas for Contributions
 
-- 🆕 Add new perfume brands and collections
-- 🔧 Improve search algorithms
+- 🆕 Add new MCP tools (price tracking, recommendations, etc.)
+- 🔧 Improve search algorithms with fuzzy matching
 - 🌍 Add internationalization support
 - 📊 Add analytics and usage metrics
-- 🎨 Enhance data structure with images
-- 🔗 Integrate with other e-commerce platforms
+- 🎨 Add image support from database
+- 🔗 Add inventory management tools
+- 🔍 Add advanced filtering options
+- 📈 Add trending perfumes tool
 
 ## Issues
 

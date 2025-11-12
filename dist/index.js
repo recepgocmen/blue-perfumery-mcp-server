@@ -2,7 +2,8 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError, } from "@modelcontextprotocol/sdk/types.js";
-import { perfumes, getPerfumesByGender, searchPerfumesByName, getPerfumeById } from "./data.js";
+import { connectDatabase } from "./config/database.js";
+import { Product } from "./models/Product.js";
 const server = new Server({
     name: "blue-perfumery-mcp",
     version: "1.0.0",
@@ -90,6 +91,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     try {
         switch (name) {
             case "list_all_perfumes": {
+                const perfumes = await Product.find({ status: "active" }).lean();
                 return {
                     content: [
                         {
@@ -108,7 +110,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 if (!id) {
                     throw new McpError(ErrorCode.InvalidParams, "ID parameter is required");
                 }
-                const perfume = getPerfumeById(id);
+                const perfume = await Product.findOne({ id, status: "active" }).lean();
                 if (!perfume) {
                     return {
                         content: [
@@ -139,7 +141,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 if (!query) {
                     throw new McpError(ErrorCode.InvalidParams, "Query parameter is required");
                 }
-                const results = searchPerfumesByName(query);
+                const results = await Product.find({
+                    status: "active",
+                    $or: [
+                        { name: { $regex: query, $options: "i" } },
+                        { brand: { $regex: query, $options: "i" } },
+                        { description: { $regex: query, $options: "i" } },
+                    ],
+                }).lean();
                 return {
                     content: [
                         {
@@ -162,7 +171,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 if (!["men", "women", "niche"].includes(category)) {
                     throw new McpError(ErrorCode.InvalidParams, "Category must be 'men', 'women', or 'niche'");
                 }
-                const results = getPerfumesByGender(category);
+                let filter = { status: "active" };
+                if (category === "niche" || category === "niches") {
+                    // Niche perfumes - filter by category containing exclusive/artisanal/premium
+                    filter.$or = [
+                        { category: { $regex: "exclusive", $options: "i" } },
+                        { category: { $regex: "artisanal", $options: "i" } },
+                        { category: { $regex: "premium", $options: "i" } },
+                        { category: "niches" },
+                    ];
+                }
+                else if (category === "men" || category === "male") {
+                    // Men's perfumes - male or unisex
+                    filter.$or = [
+                        { gender: "male" },
+                        { gender: "unisex" },
+                    ];
+                }
+                else if (category === "women" || category === "female") {
+                    // Women's perfumes - female or unisex
+                    filter.$or = [
+                        { gender: "female" },
+                        { gender: "unisex" },
+                    ];
+                }
+                const results = await Product.find(filter).lean();
                 return {
                     content: [
                         {
@@ -182,7 +215,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 if (!id) {
                     throw new McpError(ErrorCode.InvalidParams, "ID parameter is required");
                 }
-                const perfume = getPerfumeById(id);
+                const perfume = await Product.findOne({ id, status: "active" }).lean();
                 if (!perfume) {
                     return {
                         content: [
@@ -241,9 +274,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 // Start the server
 async function main() {
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
-    console.error("Blue Perfumery MCP server running on stdio");
+    try {
+        // Connect to database first
+        await connectDatabase();
+        // Then start the MCP server
+        const transport = new StdioServerTransport();
+        await server.connect(transport);
+        console.error("Blue Perfumery MCP server running on stdio");
+    }
+    catch (error) {
+        console.error("Failed to start MCP server:", error);
+        process.exit(1);
+    }
 }
 main().catch((error) => {
     console.error("Server error:", error);
